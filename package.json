@@ -1,0 +1,39 @@
+{
+  "name": "read",
+  "version": "1.0.0",
+  "description": "轻量阅读器：学术论文与 CET-6 英语两个独立领域，Markdown 阅读与批注；通过 MCP / CLI / REST 向任意 agent 提供上下文",
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "mcp": "node --no-warnings mcp-stdio.js",
+    "cli": "node bin/read.js",
+    "dict:import": "node --no-warnings scripts/import-ecdict.js"
+  },
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@mozilla/readability": "^0.6.0",
+    "cheerio": "^1.2.0",
+    "csv-parse": "^7.0.3",
+    "dompurify": "^3.4.16",
+    "express": "^5.2.1",
+    "fflate": "^0.8.3",
+    "katex": "^0.18.10",
+    "linkedom": "^0.18.13",
+    "marked": "^18.1.0",
+    "marked-katex-extension": "^5.1.13",
+    "multer": "^2.4.0",
+    "pdfjs-dist": "^6.4.299",
+    "turndown": "^7.2.4",
+    "zod": "^4.6.5"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "bin": {
+    "read-academic": "bin/read.js",
+    "read-english": "bin/read.js",
+    "read-mcp": "mcp-stdio.js"
+  },
+  "private": true
+}

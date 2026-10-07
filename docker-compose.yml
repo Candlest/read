@@ -1,0 +1,14 @@
+services:
+  read:
+    build: .
+    ports:
+      - "127.0.0.1:5178:5178"   # 仅本机，由 nginx 反向代理对外
+    volumes:
+      - ./data:/data
+    env_file:
+      - path: .env               # PADDLEOCR_TOKEN 等
+        required: false
+    environment:
+      READ_TOKEN: ${READ_TOKEN:?请设置 READ_TOKEN}
+      READ_PUBLIC_URL: ${READ_PUBLIC_URL:-http://localhost:5178}
+    restart: unless-stopped

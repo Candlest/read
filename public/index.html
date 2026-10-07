@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>阅读器</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='1' width='12' height='14' rx='2' fill='%233e63dd'/%3E%3Crect x='5' y='5' width='6' height='1.5' fill='white'/%3E%3Crect x='5' y='8' width='6' height='1.5' fill='white'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- 文库 -->
+    <aside id="library">
+      <div class="lib-head">
+        <div id="domain-switch" class="seg wide">
+          <button data-domain="academic">学术</button><button data-domain="english">英语</button>
+        </div>
+        <form id="import-form">
+          <input id="import-input" placeholder="arXiv ID / arXiv 链接 / PDF 或 HTML URL" autocomplete="off" />
+          <div class="row">
+            <select id="import-kind" hidden title="材料类别"></select>
+            <button type="submit">导入</button>
+            <label class="btn ghost">上传文件<input id="upload-input" type="file" accept=".pdf,.html,.htm,.txt,.md" hidden /></label>
+          </div>
+        </form>
+        <div id="import-status" class="muted small"></div>
+        <div class="row filters">
+          <input id="lib-search" placeholder="搜索标题" />
+          <select id="lib-status">
+            <option value="">全部状态</option>
+            <option>未读</option><option>阅读中</option><option>已完成</option>
+          </select>
+          <select id="lib-kind" hidden></select>
+        </div>
+      </div>
+      <div class="lib-section"><span id="doc-heading">论文</span></div>
+      <ul id="paper-list"></ul>
+      <div id="writing-section" hidden>
+        <div class="lib-section row between"><span>写作</span><button id="new-writing" class="ghost tiny">新建</button></div>
+        <ul id="writing-list"></ul>
+      </div>
+      <div class="lib-foot row">
+        <button id="manage-tags" class="ghost small">管理标签</button>
+        <button id="edit-profile" class="ghost small">档案</button>
+        <button id="open-dict" class="ghost small" hidden>词典</button>
+      </div>
+    </aside>
+
+    <!-- 阅读区 -->
+    <main id="reader">
+      <div id="reader-toolbar" hidden>
+        <div class="title-wrap">
+          <div id="paper-title"></div>
+          <div id="paper-sub" class="muted small"></div>
+        </div>
+        <div class="row">
+          <span id="doc-source" class="muted small"></span>
+          <span id="parse-ctl" class="row">
+            <select id="parser-select" title="把 PDF 解析为 Markdown"></select>
+            <button id="parse-btn" class="ghost small">解析</button>
+          </span>
+          <select id="vocab-mode" hidden title="在正文中标出属于所选词表的单词"></select>
+          <div id="ref-switch" class="seg"></div>
+          <div id="zoom-ctl" class="seg" hidden>
+            <button data-zoom="-">−</button><button data-zoom="fit">适宽</button><button data-zoom="+">＋</button>
+          </div>
+          <select id="paper-status">
+            <option>未读</option><option>阅读中</option><option>已完成</option>
+          </select>
+          <button id="delete-paper" class="ghost danger small">删除</button>
+        </div>
+      </div>
+      <div id="doc-banner" class="small" hidden></div>
+      <div id="viewer-host">
+        <div id="empty" class="muted">从左侧导入或选择一篇论文。<br />PDF 导入后自动解析为 Markdown，在正文中选中文字即可添加标签与评论。</div>
+        <article id="md-view" hidden></article>
+        <section id="writing-view" hidden>
+          <div class="w-inner">
+            <div class="row">
+              <select id="w-kind"></select>
+              <input id="w-title" placeholder="标题" />
+              <select id="w-doc" title="关联材料"></select>
+            </div>
+            <textarea id="w-prompt" rows="4" placeholder="题目；翻译填写中文原文"></textarea>
+            <div class="row between">
+              <span class="row"><select id="w-version"></select><span id="w-count" class="muted small"></span></span>
+              <span class="row">
+                <span id="w-status" class="muted small"></span>
+                <button id="w-save" class="small">保存为新版本</button>
+                <button id="w-delete" class="ghost danger small">删除</button>
+              </span>
+            </div>
+            <textarea id="w-content" placeholder="正文（Ctrl/⌘+S 保存为新版本）"></textarea>
+          </div>
+        </section>
+        <div id="ref-pane" hidden>
+          <div id="pdf-container" hidden><div id="pdf-viewer" class="pdfViewer"></div></div>
+          <iframe id="html-frame" hidden></iframe>
+        </div>
+      </div>
+    </main>
+
+    <!-- 侧栏 -->
+    <aside id="panel" hidden>
+      <nav class="tabs">
+        <button data-tab="annotations" class="active">批注 <span id="ann-count"></span></button>
+        <button data-tab="notes">笔记</button>
+        <button data-tab="agent"><span id="agent-tab-label">Agent</span> <span id="out-count"></span></button>
+      </nav>
+
+      <section id="tab-annotations" class="tab">
+        <div id="ann-filter" class="chips"></div>
+        <ul id="ann-list"></ul>
+      </section>
+
+      <section id="tab-notes" class="tab" hidden>
+        <div class="row between">
+          <span id="notes-status" class="muted small"></span>
+          <span class="row">
+            <button id="notes-template" class="ghost small">插入模板</button>
+            <button id="copy-reading" class="ghost small">复制阅读记录</button>
+          </span>
+        </div>
+        <textarea id="notes" placeholder="阅读感想、总结、与自己研究的联系……（Markdown）"></textarea>
+      </section>
+
+      <section id="tab-agent" class="tab" hidden>
+        <details id="connect" class="box">
+          <summary>连接 agent（MCP）</summary>
+          <div id="connect-body" class="small"></div>
+        </details>
+
+        <h3>任务模板</h3>
+        <p class="muted small">在 agent 中调用 MCP prompt / get_task，或复制任务说明发给任意 LLM。</p>
+        <label id="task-inline-row" class="small row"><input type="checkbox" id="task-inline" /> 复制时内联正文全文（用于无工具调用的对话式 LLM）</label>
+        <ul id="task-list"></ul>
+
+        <div class="row between history-head">
+          <h3>Agent 输出</h3>
+          <span class="row">
+            <button id="paste-output" class="ghost small">粘贴结果</button>
+            <button id="compare-runs" class="ghost small" disabled>对比所选</button>
+          </span>
+        </div>
+        <ul id="run-list"></ul>
+
+        <div id="run-view" hidden>
+          <div class="row between">
+            <strong id="run-title"></strong>
+            <button id="run-delete" class="ghost danger small">删除</button>
+          </div>
+          <div id="run-meta" class="muted small"></div>
+          <div id="run-output" class="md"></div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <!-- 选区弹窗 -->
+  <div id="sel-pop" hidden>
+    <div id="sel-dict" hidden></div>
+    <div id="sel-links" class="row small" hidden></div>
+    <div id="sel-tags" class="chips"></div>
+    <textarea id="sel-comment" rows="3" placeholder="评论（可选）  Ctrl/⌘+Enter 保存，数字键切换标签"></textarea>
+    <div class="row between">
+      <span class="muted small" id="sel-quote"></span>
+      <span class="row"><button id="sel-cancel" class="ghost small">取消</button><button id="sel-save" class="small">保存</button></span>
+    </div>
+  </div>
+
+  <!-- 标签管理 -->
+  <dialog id="tag-dialog">
+    <h3>标签</h3>
+    <p class="muted small">标签说明会随批注一起发送给 LLM，用于解释标签含义。</p>
+    <table id="tag-table"><thead><tr><th>颜色</th><th>名称</th><th>说明</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="row between">
+      <button id="tag-add" class="ghost small">新增标签</button>
+      <span class="row"><button id="tag-cancel" class="ghost">取消</button><button id="tag-save">保存</button></span>
+    </div>
+  </dialog>
+
+  <!-- 档案 -->
+  <dialog id="profile-dialog">
+    <h3 id="profile-title">档案</h3>
+    <p class="muted small">档案随上下文提供给 agent 与对话模型。两个领域的档案分开保存。</p>
+    <textarea id="profile-text" rows="12"></textarea>
+    <div class="row between">
+      <span></span>
+      <span class="row"><button id="profile-cancel" class="ghost">取消</button><button id="profile-save">保存</button></span>
+    </div>
+  </dialog>
+
+  <!-- 词典与词表（英语） -->
+  <dialog id="dict-dialog">
+    <div class="row between"><h3>词典与词表</h3><button id="dict-close" class="ghost">关闭</button></div>
+    <p class="small">本地词典使用 <a href="https://github.com/skywind3000/ECDICT" target="_blank" rel="noopener">ECDICT</a>（MIT，约 77 万条，下载约 66MB）。其 tag 字段提供四级、六级、考研、托福、雅思、GRE 等词表，词表来源为常见考试词书，与考试中心公布的考纲词表是否一致未核验。</p>
+    <div class="row"><span id="dict-info" class="small"></span><button id="dict-import" class="small">下载并导入 ECDICT</button></div>
+    <div id="dict-progress" class="muted small"></div>
+    <h3>词表</h3>
+    <ul id="dict-lists" class="dict-lists"></ul>
+    <form id="wordlist-form" class="row">
+      <input id="wordlist-name" placeholder="词表名，如 cet6-official" pattern="[A-Za-z0-9_\-]{1,40}" required />
+      <input id="wordlist-file" type="file" accept=".txt,.csv" required />
+      <button class="small">导入自定义词表</button>
+      <span id="wordlist-msg" class="muted small"></span>
+    </form>
+    <p class="muted small">自定义词表为文本文件，每行一个词，行内第一个单词有效（如“abandon v. 放弃”）。判断时按原形匹配，complained 视为 complain。</p>
+  </dialog>
+
+  <!-- 运行对比 -->
+  <dialog id="compare-dialog">
+    <div class="row between"><h3>运行对比</h3><button id="compare-close" class="ghost">关闭</button></div>
+    <div id="compare-body"></div>
+  </dialog>
+
+  <!-- 粘贴外部 LLM 结果 -->
+  <dialog id="paste-dialog">
+    <h3>粘贴结果</h3>
+    <form id="paste-form" class="col">
+      <div class="row">
+        <label class="col">任务<select name="taskId"><option value="">（自由分析）</option></select></label>
+        <label class="col">agent / 工具<input name="agent" required placeholder="如 open-webui / chatgpt-web / deepseek-chat" /></label>
+        <label class="col">模型<input name="model" placeholder="模型 ID" /></label>
+      </div>
+      <label class="col">标题<input name="title" required /></label>
+      <label class="col">内容（Markdown）<textarea name="content" rows="14" required></textarea></label>
+      <div class="row between"><span class="muted small">关联当前文档或写作的最新版本</span>
+        <span class="row"><button type="button" id="paste-cancel" class="ghost">取消</button><button>保存</button></span></div>
+    </form>
+  </dialog>
+
+  <script src="/config.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
